@@ -33,6 +33,8 @@ MAIL_FROM_ADDR = "513736920@qq.com"
 MAIL_TO_ADDR = "513736920@qq.com"
 MAIL_SMTP = "smtp.qq.com"
 
+AVERAGE_SPEED = 4200
+
 IS_CONTINUE = True
 
 REMAIN_TASK = "null"
@@ -90,7 +92,6 @@ def convert_time(seconds):
     else:
         minutess = divmod(seconds, minutes)
         return "%d:%d" % (int(minutess[0]), math.ceil(minutess[1]))
-
 
 
 def show_status():
@@ -294,6 +295,8 @@ while IS_CONTINUE:
     lines = open(next_task_path, 'rb').readlines()
     total = len(lines)
     print "Total rows: " + str(total)
+    content = next_task + " start! <br>eta: " + str(convert_time(int(total / AVERAGE_SPEED)))
+    send_email(content)
     source_file = open(next_task_path, 'rb')
     for line in source_file:
         try:
