@@ -3,6 +3,7 @@ import math
 import os
 import smtplib
 import subprocess
+import time
 from email.header import Header
 from email.mime.text import MIMEText
 from email.utils import parseaddr, formataddr
@@ -27,13 +28,13 @@ def convert_time(seconds):
         return "%ds" % math.ceil(seconds)
     elif seconds > day:
         days = divmod(seconds, day)
-        return "%dd,%s" % (int(days[0]), convert_time(days[1]))
+        return "%d:%s" % (int(days[0]), convert_time(days[1]))
     elif seconds > hour:
         hours = divmod(seconds, hour)
-        return '%dh,%s' % (int(hours[0]), convert_time(hours[1]))
+        return '%d:%s' % (int(hours[0]), convert_time(hours[1]))
     else:
         minutess = divmod(seconds, minutes)
-        return "%dm,%ds" % (int(minutess[0]), math.ceil(minutess[1]))
+        return "%d:%d" % (int(minutess[0]), math.ceil(minutess[1]))
 
 
 def extract_index_suffix(filename):
@@ -114,7 +115,7 @@ def mv_pending2finish(finish_dir=FINISH_DIR, filename="FILENAME"):
 
 if __name__ == "__main__":
     # send_email()
-    # print convert_time(12345)
+    print convert_time(123)
     # print extract_index_suffix("2016-08-08-00-new.txt")
     # print traversal_dir("/home/hongyu/Desktop/Bistu_internet_data")
     # speak("aa")
@@ -125,4 +126,5 @@ if __name__ == "__main__":
     # else:
     #     print "nomore"
 
-    mv_pending2finish(finish_dir="/Users/hongyu/Desktop/temp/finish_task", filename="/Users/hongyu/Desktop/temp/pending_task/a.txt")
+
+    # print time.strftime('%H:%M:%S', time.localtime(time.time()))

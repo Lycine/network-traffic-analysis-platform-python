@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-import sys
-import time
 import math
 import smtplib
 import subprocess
-
+import sys
+import time
 from datetime import datetime
 from email.header import Header
 from email.mime.text import MIMEText
@@ -13,8 +12,8 @@ from email.utils import parseaddr, formataddr
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
-FINISH_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/finish"
-PENDING_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/pending"
+FINISHED_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/finished/"
+PENDING_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/pending/"
 
 ES_INDEX = "bistu-internet-data-"
 ES_TYPE = "network-metadata"
@@ -36,6 +35,8 @@ MAIL_SMTP = "smtp.qq.com"
 
 IS_CONTINUE = True
 
+REMAIN_TASK = "null"
+
 
 def check_pending_task(pending_dir=PENDING_DIR):
     command = "ls -l " + pending_dir + "|tail -n 1 |awk '{print $9}'"
@@ -46,23 +47,22 @@ def check_pending_task(pending_dir=PENDING_DIR):
     p = subprocess.Popen(command2, stdout=subprocess.PIPE, shell=True)
     (output2, err2) = p.communicate()
     output2 = output2.replace(' ', '')
-    print 'reamin task: ' + output2,
-    if output == "":
-        print "no more pending task"
+    print 'Remain task: ' + str(int(output2) - 1)
+    global REMAIN_TASK
+    REMAIN_TASK = str(int(output2) - 1)
+    if REMAIN_TASK == 0:
+        print "No more pending task."
     return output
 
 
-def mv_pending2finish(finish_dir=FINISH_DIR, filename="FILENAME"):
-    command = "mv " + filename + " " + finish_dir
+def mv_pending2finished(finished_dir=FINISHED_DIR, filename="FILENAME"):
+    command = "mv " + filename + " " + finished_dir
     p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     (output, err) = p.communicate()
     if p.returncode == 0:
-        print "move task success"
+        print "Move task success!"
     else:
-        print "move task failure"
-        # if output == "":
-        #     print "no more pending task"
-        # return output
+        print "Move task failure!"
 
 
 def speak(message="nothing", IS_MUTE=True):
@@ -83,13 +83,14 @@ def convert_time(seconds):
         return "%ds" % math.ceil(seconds)
     elif seconds > day:
         days = divmod(seconds, day)
-        return "%dd,%s" % (int(days[0]), convert_time(days[1]))
+        return "%d:%s" % (int(days[0]), convert_time(days[1]))
     elif seconds > hour:
         hours = divmod(seconds, hour)
-        return '%d:%' % (int(hours[0]), convert_time(hours[1]))
+        return '%d:%s' % (int(hours[0]), convert_time(hours[1]))
     else:
         minutess = divmod(seconds, minutes)
         return "%d:%d" % (int(minutess[0]), math.ceil(minutess[1]))
+
 
 
 def show_status():
@@ -100,7 +101,8 @@ def show_status():
         ', speed: ' + str(round(count / (end - START_TIME), 2)) + 'rows/sec' +
         ', count/total: ' + str(count) + '/' + str(total) +
         ', eta: ' + convert_time(round((total - count) / (count / (end - START_TIME)), 0)) +
-        ', finish: ' + str(round((count + 0.0) / total * 100, 2)) + '%'),
+        ', finished: ' + str(round((count + 0.0) / total * 100, 2)) + '%' +
+        ', time: ' + str(time.strftime('%H:%M:%S', time.localtime(time.time())))),
 
 
 def send_email(content=MAIL_CONTENT,
@@ -111,20 +113,24 @@ def send_email(content=MAIL_CONTENT,
                to_addr=MAIL_TO_ADDR,
                mail_password=MAIL_PASS,
                smtp_server=MAIL_SMTP):
-    def _format_addr(s):
-        name, addr = parseaddr(s)
-        return formataddr((Header(name, 'utf-8').encode(), addr.encode('utf-8') if isinstance(addr, unicode) else addr))
+    try:
+        def _format_addr(s):
+            name, addr = parseaddr(s)
+            return formataddr(
+                (Header(name, 'utf-8').encode(), addr.encode('utf-8') if isinstance(addr, unicode) else addr))
 
-    msg = MIMEText(content, 'html', 'utf-8')
-    msg['From'] = _format_addr(from_name + u' <%s>' % from_addr)
-    msg['To'] = _format_addr(to_name + u' <%s>' % to_addr)
-    msg['Subject'] = Header(subject, 'utf-8').encode()
+        msg = MIMEText(content, 'html', 'utf-8')
+        msg['From'] = _format_addr(from_name + u' <%s>' % from_addr)
+        msg['To'] = _format_addr(to_name + u' <%s>' % to_addr)
+        msg['Subject'] = Header(subject, 'utf-8').encode()
 
-    server = smtplib.SMTP(smtp_server, 25)
-    # server.set_debuglevel(1)
-    server.login(from_addr, mail_password)
-    server.sendmail(from_addr, [to_addr], msg.as_string())
-    server.quit()
+        server = smtplib.SMTP(smtp_server, 25)
+        # server.set_debuglevel(1)
+        server.login(from_addr, mail_password)
+        server.sendmail(from_addr, [to_addr], msg.as_string())
+        server.quit()
+    except:
+        pass
 
 
 mapping = '''
@@ -269,9 +275,8 @@ es = Elasticsearch(
 #     for filename in file_names:  # 输出文件信息
 while IS_CONTINUE:
     next_task = check_pending_task()
-    if next_task != "":
-        pass
-    else:
+    if next_task.strip(" ").strip("\n") == "":
+        IS_CONTINUE = False
         break
     next_task_array = next_task.split("-")[0:4]
     next_task_path = PENDING_DIR + next_task
@@ -284,10 +289,11 @@ while IS_CONTINUE:
     START_TIME = time.clock()
     count = 0
     speak("new task begin", IS_MUTE)
-    print "running file:" + next_task_path  # 输出文件路径信息
+    next_task_path = next_task_path.strip('\n')
+    print "Running file:" + next_task_path  # 输出文件路径信息
     lines = open(next_task_path, 'rb').readlines()
     total = len(lines)
-    print "total rows: " + str(total)
+    print "Total rows: " + str(total)
     source_file = open(next_task_path, 'rb')
     for line in source_file:
         try:
@@ -339,7 +345,7 @@ while IS_CONTINUE:
             actions.append(action)
         except Exception, e:
             print e
-        if len(actions) == 24000:
+        if len(actions) == 28000:
             try:
                 for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
                                                       max_chunk_bytes=8 * 100 * 100 * 1024):
@@ -359,14 +365,17 @@ while IS_CONTINUE:
                 print('A document failed:', info)
         del actions[0:len(actions)]
         source_file.close()
+        print '\r',
         show_status()
     source_file.close()
     speak("task complete", IS_MUTE)
-    content = next_task + " <br>complete!"
+    content = next_task + " complete! <br>Remain task: " + str(REMAIN_TASK)
     send_email(content)
+    mv_pending2finished(filename=next_task_path)
     print " "
     print " "
     time.sleep(1)
-    mv_pending2finish()
-speak("all task complete", IS_MUTE)
-send_email("all task complete")
+
+speak("All task complete", IS_MUTE)
+print "All task complete"
+send_email("All task complete")
