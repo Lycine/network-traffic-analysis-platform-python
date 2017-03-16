@@ -24,7 +24,7 @@ ES_PORT = "9200"
 
 IS_MUTE = True
 
-MAIL_PASS = ""
+MAIL_PASS = "kmryydqxlgetbibb"
 MAIL_SUBJECT = "csv2es运行状态报告"
 MAIL_CONTENT = ""
 MAIL_FROM_NAME = "hongyu"
