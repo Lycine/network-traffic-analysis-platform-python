@@ -33,7 +33,7 @@ MAIL_FROM_ADDR = "513736920@qq.com"
 MAIL_TO_ADDR = "513736920@qq.com"
 MAIL_SMTP = "smtp.qq.com"
 
-AVERAGE_SPEED = 4200
+AVERAGE_SPEED = 4100
 
 IS_CONTINUE = True
 
@@ -348,7 +348,7 @@ while IS_CONTINUE:
             actions.append(action)
         except Exception, e:
             print e
-        if len(actions) == 28000:
+        if len(actions) == 26000:
             try:
                 for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
                                                       max_chunk_bytes=8 * 100 * 100 * 1024):
