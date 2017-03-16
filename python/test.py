@@ -15,6 +15,8 @@ MAIL_TO_NAME = ""
 MAIL_FROM_ADDR = ""
 MAIL_TO_ADDR = ""
 MAIL_SMTP = ""
+PENDING_DIR = ""
+FINISH_DIR = ""
 
 
 def convert_time(seconds):
@@ -50,8 +52,8 @@ def speak(message):
     return output
 
 
-def traversal_dir(ROOT_DIR):
-    for parent, dirnames, filenames in os.walk(ROOT_DIR):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
+def traversal_dir(PENDING_DIR):
+    for parent, dirnames, filenames in os.walk(PENDING_DIR):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
         for filename in filenames:  # 输出文件信息
             # print "parent is: " + parent
             # print "filename is: " + filename
@@ -82,9 +84,45 @@ def send_email(content=MAIL_CONTENT,
     server.quit()
 
 
+def check_pending_task(pending_dir=PENDING_DIR):
+    command = "ls -l " + pending_dir + "|tail -n 1 |awk '{print $9}'"
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+    (output, err) = p.communicate()
+
+    command2 = " ls -l " + pending_dir + " |wc -l"
+    p = subprocess.Popen(command2, stdout=subprocess.PIPE, shell=True)
+    (output2, err2) = p.communicate()
+    output2 = output2.replace(' ', '')
+    print 'reamin task: ' + output2,
+    if output == "":
+        print "no more pending task"
+    return output
+
+
+def mv_pending2finish(finish_dir=FINISH_DIR, filename="FILENAME"):
+    command = "mv " + filename + " " + finish_dir
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+    (output, err) = p.communicate()
+    if p.returncode == 0:
+        print "move task success"
+    else:
+        print "move task failure"
+        # if output == "":
+        #     print "no more pending task"
+        # return output
+
+
 if __name__ == "__main__":
-    send_email()
-    print convert_time(12345)
-    print extract_index_suffix("2016-08-08-00-new.txt")
-    print traversal_dir("/home/hongyu/Desktop/Bistu_internet_data")
-    speak("aa")
+    # send_email()
+    # print convert_time(12345)
+    # print extract_index_suffix("2016-08-08-00-new.txt")
+    # print traversal_dir("/home/hongyu/Desktop/Bistu_internet_data")
+    # speak("aa")
+
+    # next_task = check_pending_task(pending_dir="/Users/hongyu/Desktop/temp/pending_task")
+    # if next_task != "":
+    #     print "continue"
+    # else:
+    #     print "nomore"
+
+    mv_pending2finish(finish_dir="/Users/hongyu/Desktop/temp/finish_task", filename="/Users/hongyu/Desktop/temp/pending_task/a.txt")
