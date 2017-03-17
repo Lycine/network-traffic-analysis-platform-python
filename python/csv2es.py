@@ -22,13 +22,13 @@ ES_PASSWORD = "changeme"
 ES_HOSTNAME = "localhost"
 ES_PORT = "9200"
 
-IS_MUTE = True
+IS_MUTE = False
 
 MAIL_PASS = "kmryydqxlgetbibb"
-MAIL_SUBJECT = "csv2es运行状态报告"
+MAIL_SUBJECT = "csv2es status report"
 MAIL_CONTENT = ""
-MAIL_FROM_NAME = "hongyu"
-MAIL_TO_NAME = "hongyu"
+MAIL_FROM_NAME = "Report Robot"
+MAIL_TO_NAME = "Administrator of elasticsearch"
 MAIL_FROM_ADDR = "513736920@qq.com"
 MAIL_TO_ADDR = "513736920@qq.com"
 MAIL_SMTP = "smtp.qq.com"
@@ -128,7 +128,6 @@ def send_email(content=MAIL_CONTENT,
         msg['Subject'] = Header(subject, 'utf-8').encode()
 
         server = smtplib.SMTP(smtp_server, 25)
-        # server.set_debuglevel(1)
         server.login(from_addr, mail_password)
         server.sendmail(from_addr, [to_addr], msg.as_string())
         server.quit()
@@ -272,7 +271,7 @@ try:
         [
             'http://' + ES_USERNAME + ':' + ES_PASSWORD + '@' + ES_HOSTNAME + ':' + ES_PORT + '/'
         ],
-        verify_certs=True
+        verify_certs=True,
     )
 
     while IS_CONTINUE:
@@ -292,7 +291,7 @@ try:
         count = 0
         speak("new task begin", IS_MUTE)
         next_task_path = next_task_path.strip('\n')
-        print "Running file:" + next_task_path  # 输出文件路径信息
+        print "Running file:" + next_task_path
         lines = open(next_task_path, 'rb').readlines()
         total = len(lines)
         print "Total rows: " + str(total)
@@ -349,7 +348,7 @@ try:
                 actions.append(action)
             except Exception, e:
                 print e
-            if len(actions) == 26000:
+            if len(actions) == 16000:
                 try:
                     for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
                                                           max_chunk_bytes=8 * 100 * 100 * 1024):
@@ -379,10 +378,10 @@ try:
         print " "
         print " "
         time.sleep(1)
-        speak("All task complete", IS_MUTE)
-        print "All task complete"
-        subject = "csv2es所有任务已完成"
-        send_email(content="All task complete", subject=subject)
+    speak("All task complete", IS_MUTE)
+    print "All task complete"
+    subject = "csv2es所有任务已完成"
+    send_email(content="All task complete", subject=subject)
 except Exception, e:
     subject = "csv2es运行出现错误"
     content = "Something wrong: <br>" + str(e)
