@@ -96,6 +96,8 @@ def convert_time(seconds):
 
 def show_status():
     end = time.clock()
+    global AVERAGE_SPEED
+    AVERAGE_SPEED = round(count / (end - START_TIME), 2)
     print(
         'used time: %s' % convert_time((end - START_TIME)) +
         ', errorCount: ' + str(errorCount) +
@@ -261,124 +263,127 @@ mapping = '''
 '''
 
 speak("launch script", IS_MUTE)
-reload(sys)
-sys.setdefaultencoding('utf8')
-actions = []
-errorCount = 0
-es = Elasticsearch(
-    [
-        'http://' + ES_USERNAME + ':' + ES_PASSWORD + '@' + ES_HOSTNAME + ':' + ES_PORT + '/'
-    ],
-    verify_certs=True
-)
+try:
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+    actions = []
+    errorCount = 0
+    es = Elasticsearch(
+        [
+            'http://' + ES_USERNAME + ':' + ES_PASSWORD + '@' + ES_HOSTNAME + ':' + ES_PORT + '/'
+        ],
+        verify_certs=True
+    )
 
-# for parent, dir_names, file_names in os.walk(PENDING_DIR):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
-#     for filename in file_names:  # 输出文件信息
-while IS_CONTINUE:
-    next_task = check_pending_task()
-    if next_task.strip(" ").strip("\n") == "":
-        IS_CONTINUE = False
-        break
-    next_task_array = next_task.split("-")[0:4]
-    next_task_path = PENDING_DIR + next_task
-    index_suffix = ""
-    for part in next_task_array:
-        index_suffix += part
-    temp_index = ES_INDEX + index_suffix
-    print "index: " + temp_index
-    es.indices.create(index=temp_index, ignore=400, body=mapping)
-    START_TIME = time.clock()
-    count = 0
-    speak("new task begin", IS_MUTE)
-    next_task_path = next_task_path.strip('\n')
-    print "Running file:" + next_task_path  # 输出文件路径信息
-    lines = open(next_task_path, 'rb').readlines()
-    total = len(lines)
-    print "Total rows: " + str(total)
-    content = next_task + " start! <br>eta: " + str(convert_time(int(total / AVERAGE_SPEED)))
-    send_email(content)
-    source_file = open(next_task_path, 'rb')
-    for line in source_file:
-        try:
-            line = line.split(',')
-            action = {
-                "_index": temp_index,
-                "_type": ES_TYPE,
-                "_source": {
-                    "source_ip": line[0],
-                    "destination_ip": line[1],
-                    "sourceTransportPort": str(line[2]),
-                    "destinationTransportPort": str(line[3]),
-                    "flowStartSeconds": datetime.fromtimestamp(int(line[4]) + 0.0),
-                    "flowEndSecond": datetime.fromtimestamp(int(line[5]) + 0.0),
-                    "applicationProtocolName": str(line[6]),
-                    "applicationName": str(line[7]),
-                    "applicationCategoryName": str(line[8]),
-                    "applicationSubCategoryName": str(line[9]),
-                    "http_method": str(line[10]),
-                    "status": str(line[11]),
-                    "http_hostname": str(line[12]),
-                    "http_referer": str(line[13]),
-                    "httpRequestLabelNum": line[14],
-                    "httpReplyLabelNum": str(line[15]),
-                    "httpRequestVersion": str(line[16]),
-                    "httpReplyVersion": str(line[17]),
-                    "fileName": str(line[18]),
-                    "fileEncrypt": str(line[19]),
-                    "fileType": str(line[20]),
-                    "fileSize": str(line[21]),
-                    "fileMd5": str(line[22]),
-                    "DNSReplyCode": line[23],
-                    "DNSQueryName": str(line[24]),
-                    "DNSDelay": str(line[25]),
-                    "DNSReplyIPv4": str(line[26]),
-                    "SrcArea": str(line[28]),
-                    "DestArea": str(line[29]),
-                    "SrcIPUser": str(line[30]),
-                    "DestIPUser": str(line[31]),
-                    "SrcGeographyLocationCountryOrRegion": str(line[32]),
-                    "SrcGeographyLocationCity": str(line[33]),
-                    "SrcGeographyLocationLatitudeLongitude": str(line[35]) + ", " + str(line[34]),
-                    "DestGeographyLocationCountryOrRegion": str(line[36]),
-                    "DestGeographyLocationCity": str(line[37]),
-                    "DestGeographyLocationLatitudeLongitude": str(line[39]) + ", " + str(line[38])
-                }
-            }
-            count += 1
-            actions.append(action)
-        except Exception, e:
-            print e
-        if len(actions) == 26000:
+    while IS_CONTINUE:
+        next_task = check_pending_task()
+        if next_task.strip(" ").strip("\n") == "":
+            IS_CONTINUE = False
+            break
+        next_task_array = next_task.split("-")[0:4]
+        next_task_path = PENDING_DIR + next_task
+        index_suffix = ""
+        for part in next_task_array:
+            index_suffix += part
+        temp_index = ES_INDEX + index_suffix
+        print "index: " + temp_index
+        es.indices.create(index=temp_index, ignore=400, body=mapping)
+        START_TIME = time.clock()
+        count = 0
+        speak("new task begin", IS_MUTE)
+        next_task_path = next_task_path.strip('\n')
+        print "Running file:" + next_task_path  # 输出文件路径信息
+        lines = open(next_task_path, 'rb').readlines()
+        total = len(lines)
+        print "Total rows: " + str(total)
+        content = next_task + " start! <br>eta: " + str(convert_time(int(total / AVERAGE_SPEED)))
+        send_email(content)
+        source_file = open(next_task_path, 'rb')
+        for line in source_file:
             try:
-                for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
-                                                      max_chunk_bytes=8 * 100 * 100 * 1024):
-                    if not ok:
-                        print('A document failed:', info)
+                line = line.split(',')
+                action = {
+                    "_index": temp_index,
+                    "_type": ES_TYPE,
+                    "_source": {
+                        "source_ip": line[0],
+                        "destination_ip": line[1],
+                        "sourceTransportPort": str(line[2]),
+                        "destinationTransportPort": str(line[3]),
+                        "flowStartSeconds": datetime.fromtimestamp(int(line[4]) + 0.0),
+                        "flowEndSecond": datetime.fromtimestamp(int(line[5]) + 0.0),
+                        "applicationProtocolName": str(line[6]),
+                        "applicationName": str(line[7]),
+                        "applicationCategoryName": str(line[8]),
+                        "applicationSubCategoryName": str(line[9]),
+                        "http_method": str(line[10]),
+                        "status": str(line[11]),
+                        "http_hostname": str(line[12]),
+                        "http_referer": str(line[13]),
+                        "httpRequestLabelNum": line[14],
+                        "httpReplyLabelNum": str(line[15]),
+                        "httpRequestVersion": str(line[16]),
+                        "httpReplyVersion": str(line[17]),
+                        "fileName": str(line[18]),
+                        "fileEncrypt": str(line[19]),
+                        "fileType": str(line[20]),
+                        "fileSize": str(line[21]),
+                        "fileMd5": str(line[22]),
+                        "DNSReplyCode": line[23],
+                        "DNSQueryName": str(line[24]),
+                        "DNSDelay": str(line[25]),
+                        "DNSReplyIPv4": str(line[26]),
+                        "SrcArea": str(line[28]),
+                        "DestArea": str(line[29]),
+                        "SrcIPUser": str(line[30]),
+                        "DestIPUser": str(line[31]),
+                        "SrcGeographyLocationCountryOrRegion": str(line[32]),
+                        "SrcGeographyLocationCity": str(line[33]),
+                        "SrcGeographyLocationLatitudeLongitude": str(line[35]) + ", " + str(line[34]),
+                        "DestGeographyLocationCountryOrRegion": str(line[36]),
+                        "DestGeographyLocationCity": str(line[37]),
+                        "DestGeographyLocationLatitudeLongitude": str(line[39]) + ", " + str(line[38])
+                    }
+                }
+                count += 1
+                actions.append(action)
             except Exception, e:
                 print e
-                errorCount += 1
+            if len(actions) == 26000:
+                try:
+                    for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
+                                                          max_chunk_bytes=8 * 100 * 100 * 1024):
+                        if not ok:
+                            print('A document failed:', info)
+                except Exception, e:
+                    print e
+                    errorCount += 1
+                del actions[0:len(actions)]
+                print '\r',
+                show_status()
+
+        if len(actions) > 0:
+            for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
+                                                  max_chunk_bytes=8 * 100 * 100 * 1024):
+                if not ok:
+                    print('A document failed:', info)
             del actions[0:len(actions)]
+            source_file.close()
             print '\r',
             show_status()
-
-    if len(actions) > 0:
-        for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
-                                              max_chunk_bytes=8 * 100 * 100 * 1024):
-            if not ok:
-                print('A document failed:', info)
-        del actions[0:len(actions)]
         source_file.close()
-        print '\r',
-        show_status()
-    source_file.close()
-    speak("task complete", IS_MUTE)
-    content = next_task + " complete! <br>Remain task: " + str(REMAIN_TASK)
-    send_email(content)
-    mv_pending2finished(filename=next_task_path)
-    print " "
-    print " "
-    time.sleep(1)
-
-speak("All task complete", IS_MUTE)
-print "All task complete"
-send_email("All task complete")
+        speak("task complete", IS_MUTE)
+        content = next_task + " complete! <br>Remain task: " + str(REMAIN_TASK)
+        send_email(content)
+        mv_pending2finished(filename=next_task_path)
+        print " "
+        print " "
+        time.sleep(1)
+        speak("All task complete", IS_MUTE)
+        print "All task complete"
+        subject = "csv2es所有任务已完成"
+        send_email(content="All task complete", subject=subject)
+except Exception, e:
+    subject = "csv2es运行出现错误"
+    content = "Something wrong: <br>" + str(e)
+    send_email(content=content, subject=subject)
