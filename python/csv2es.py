@@ -11,6 +11,7 @@ from email.utils import parseaddr, formataddr
 
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
+from elasticsearch import Transport
 
 FINISHED_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/finished/"
 PENDING_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/pending/"
@@ -38,6 +39,13 @@ AVERAGE_SPEED = 4100
 IS_CONTINUE = True
 
 REMAIN_TASK = "null"
+
+actionsSize = 16000
+
+realErrorRate = 0.0
+
+taskFailure = False
+errorRate = 0.05
 
 
 def check_pending_task(pending_dir=PENDING_DIR):
@@ -100,7 +108,9 @@ def show_status():
     AVERAGE_SPEED = round(count / (end - START_TIME), 2)
     print(
         'used time: %s' % convert_time((end - START_TIME)) +
-        ', errorCount: ' + str(errorCount) +
+        ', totalErrorCount: ' + str(totalErrorCount) +
+        ', taskErrorCount: ' + str(taskErrorCount) +
+        ', errorRate: ' + str(errorRate) +
         ', speed: ' + str(round(count / (end - START_TIME), 2)) + 'rows/sec' +
         ', count/total: ' + str(count) + '/' + str(total) +
         ', eta: ' + convert_time(round((total - count) / (count / (end - START_TIME)), 0)) +
@@ -266,16 +276,10 @@ try:
     reload(sys)
     sys.setdefaultencoding('utf8')
     actions = []
-    errorCount = 0
-    es = Elasticsearch(
-        [
-            'http://' + ES_USERNAME + ':' + ES_PASSWORD + '@' + ES_HOSTNAME + ':' + ES_PORT + '/'
-        ],
-        verify_certs=True,
-    )
-
+    totalErrorCount = 0
     while IS_CONTINUE:
-        next_task = check_pending_task()
+        if not taskFailure:
+            next_task = check_pending_task()
         if next_task.strip(" ").strip("\n") == "":
             IS_CONTINUE = False
             break
@@ -286,7 +290,17 @@ try:
             index_suffix += part
         temp_index = ES_INDEX + index_suffix
         print "index: " + temp_index
-        es.indices.create(index=temp_index, ignore=400, body=mapping)
+        taskErrorCount = 0
+        es = Elasticsearch(
+            [
+                'http://' + ES_USERNAME + ':' + ES_PASSWORD + '@' + ES_HOSTNAME + ':' + ES_PORT + '/'
+            ],
+            verify_certs=True,
+        )
+        es.cluster.health(wait_for_status='yellow', request_timeout=60)
+        if es.indices.exists(index=temp_index):
+            es.indices.delete(index=temp_index)
+        es.indices.create(index=temp_index, body=mapping)
         START_TIME = time.clock()
         count = 0
         speak("new task begin", IS_MUTE)
@@ -299,6 +313,13 @@ try:
         send_email(content)
         source_file = open(next_task_path, 'rb')
         for line in source_file:
+            realErrorRate = (0.0 + taskErrorCount) * actionsSize / totalErrorCount
+            if realErrorRate > errorRate:
+                taskFailure = True
+                content = next_task + " failure! <br>taskErrorCount: " + taskErrorCount
+                subject = "csv2es task failure"
+                send_email(content, subject=subject)
+                break
             try:
                 line = line.split(',')
                 action = {
@@ -348,7 +369,7 @@ try:
                 actions.append(action)
             except Exception, e:
                 print e
-            if len(actions) == 16000:
+            if len(actions) == actionsSize:
                 try:
                     for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
                                                           max_chunk_bytes=8 * 100 * 100 * 1024):
@@ -356,7 +377,8 @@ try:
                             print('A document failed:', info)
                 except Exception, e:
                     print e
-                    errorCount += 1
+                    totalErrorCount += 1
+                    taskErrorCount += 1
                 del actions[0:len(actions)]
                 print '\r',
                 show_status()
