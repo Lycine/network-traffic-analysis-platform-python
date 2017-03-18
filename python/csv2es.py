@@ -106,16 +106,17 @@ def show_status():
     end = time.clock()
     global AVERAGE_SPEED
     AVERAGE_SPEED = round(count / (end - START_TIME), 2)
+    print '\r\r\r',
     print(
         'used time: %s' % convert_time((end - START_TIME)) +
-        ', totalErrorCount: ' + str(totalErrorCount) +
-        ', taskErrorCount: ' + str(taskErrorCount) +
-        ', errorRate: ' + str(errorRate) +
-        ', speed: ' + str(round(count / (end - START_TIME), 2)) + 'rows/sec' +
-        ', count/total: ' + str(count) + '/' + str(total) +
+        ', aErrCont: ' + str(totalErrorCount) +
+        ', tErrCont: ' + str(taskErrorCount) +
+        ', ErrRate: ' + str(realErrorRate) +
+        ', speed: ' + str(round(count / (end - START_TIME), 2)) + 'r/s' +
+        ', cont/all: ' + str(count) + '/' + str(total) +
         ', eta: ' + convert_time(round((total - count) / (count / (end - START_TIME)), 0)) +
-        ', finished: ' + str(round((count + 0.0) / total * 100, 2)) + '%' +
-        ', time: ' + str(time.strftime('%H:%M:%S', time.localtime(time.time())))),
+        ', fin: ' + str(round((count + 0.0) / total * 100, 2)) + '%' +
+        ', now: ' + str(time.strftime('%H:%M:%S', time.localtime(time.time())))),
 
 
 def send_email(content=MAIL_CONTENT,
@@ -299,8 +300,10 @@ try:
         )
         es.cluster.health(wait_for_status='yellow', request_timeout=60)
         if es.indices.exists(index=temp_index):
+            print "delete old index"
             es.indices.delete(index=temp_index)
         es.indices.create(index=temp_index, body=mapping)
+        es.indices.refresh(index=temp_index)
         START_TIME = time.clock()
         count = 0
         speak("new task begin", IS_MUTE)
@@ -313,10 +316,12 @@ try:
         send_email(content)
         source_file = open(next_task_path, 'rb')
         for line in source_file:
-            realErrorRate = (0.0 + taskErrorCount) * actionsSize / totalErrorCount
+            count += 1
+            realErrorRate = (0.0 + taskErrorCount) * actionsSize / total
             if realErrorRate > errorRate:
                 taskFailure = True
-                content = next_task + " failure! <br>taskErrorCount: " + taskErrorCount
+                print next_task + " failure"
+                content = next_task + " failure! <br>taskErrorCount: " + str(taskErrorCount)
                 subject = "csv2es task failure"
                 send_email(content, subject=subject)
                 break
@@ -365,7 +370,6 @@ try:
                         "DestGeographyLocationLatitudeLongitude": str(line[39]) + ", " + str(line[38])
                     }
                 }
-                count += 1
                 actions.append(action)
             except Exception, e:
                 print e
@@ -380,7 +384,6 @@ try:
                     totalErrorCount += 1
                     taskErrorCount += 1
                 del actions[0:len(actions)]
-                print '\r',
                 show_status()
 
         if len(actions) > 0:
@@ -390,13 +393,13 @@ try:
                     print('A document failed:', info)
             del actions[0:len(actions)]
             source_file.close()
-            print '\r',
             show_status()
         source_file.close()
-        speak("task complete", IS_MUTE)
-        content = next_task + " complete! <br>Remain task: " + str(REMAIN_TASK)
-        send_email(content)
-        mv_pending2finished(filename=next_task_path)
+        if not taskFailure:
+            speak("task complete", IS_MUTE)
+            content = next_task + " complete! <br>Remain task: " + str(REMAIN_TASK)
+            send_email(content)
+            mv_pending2finished(filename=next_task_path)
         print " "
         print " "
         time.sleep(1)
@@ -408,3 +411,4 @@ except Exception, e:
     subject = "csv2es运行出现错误"
     content = "Something wrong: <br>" + str(e)
     send_email(content=content, subject=subject)
+    print e
