@@ -14,6 +14,7 @@ while :
         flag=$(echo "$mem_used_rate > $threshold" | bc)
         if [ $flag -eq 1 ];then
             printf '\r''Less available memory: '$mem_used_rate'>'$threshold' '
+            sleep 30
             if [ "$csv2es_pid" =  "" ];then
                 printf 'pid: empty'
                 kill -9 $csv2es_pid
@@ -30,8 +31,9 @@ while :
                 if [ "$is_pedning_empty" = "" ]; then
                     break
                 else :
-                    printf '\nrun python\n'
-                    nohup python /home/hongyu/PycharmProjects/bistu-internet-analysis/python/csv2es.py &
+                    printf '\nrun csv2es_python\n'
+#                    nohup csv2es_python /home/hongyu/PycharmProjects/bistu-internet-analysis/csv2es_python/csv2es-entrance.py &
+                    python /home/hongyu/PycharmProjects/bistu-internet-analysis/python/csv2es.py
                 fi
 
             else :
