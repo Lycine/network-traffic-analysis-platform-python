@@ -11,7 +11,6 @@ from email.utils import parseaddr, formataddr
 
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
-from elasticsearch import Transport
 
 FINISHED_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/finished/"
 PENDING_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/pending/"
@@ -40,7 +39,8 @@ IS_CONTINUE = True
 
 REMAIN_TASK = "null"
 
-actionsSize = 16000
+# actionsSize = 16000
+actionsSize = 2000
 
 realErrorRate = 0.0
 
@@ -148,8 +148,9 @@ def send_email(content=MAIL_CONTENT,
 
 mapping = '''
 {
-    "settings": {
-        "number_of_shards": 20
+    "settings" : {
+        "number_of_shards" : 1,
+        "number_of_replicas":0
     },
     "mappings": {
         "client": {
@@ -330,6 +331,7 @@ try:
                 action = {
                     "_index": temp_index,
                     "_type": ES_TYPE,
+                    "_id": count,
                     "_source": {
                         "source_ip": line[0],
                         "destination_ip": line[1],
@@ -375,8 +377,9 @@ try:
                 print e
             if len(actions) == actionsSize:
                 try:
-                    for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
-                                                          max_chunk_bytes=8 * 100 * 100 * 1024):
+                    # for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
+                    #                                       max_chunk_bytes=8 * 100 * 100 * 1024):
+                    for ok, info in helpers.parallel_bulk(es, actions=actions):
                         if not ok:
                             print('A document failed:', info)
                 except Exception, e:
@@ -387,8 +390,9 @@ try:
                 show_status()
 
         if len(actions) > 0:
-            for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
-                                                  max_chunk_bytes=8 * 100 * 100 * 1024):
+            # for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
+            #                                       max_chunk_bytes=8 * 100 * 100 * 1024):
+            for ok, info in helpers.parallel_bulk(es, actions=actions):
                 if not ok:
                     print('A document failed:', info)
             del actions[0:len(actions)]
@@ -400,13 +404,16 @@ try:
             content = next_task + " complete! <br>Remain task: " + str(REMAIN_TASK)
             send_email(content)
             mv_pending2finished(filename=next_task_path)
+            IS_CONTINUE = False
         print " "
         print " "
         time.sleep(1)
+    del es
     speak("All task complete", IS_MUTE)
     print "All task complete"
     subject = "csv2es所有任务已完成"
     send_email(content="All task complete", subject=subject)
+
 except Exception, e:
     subject = "csv2es运行出现错误"
     content = "Something wrong: <br>" + str(e)
