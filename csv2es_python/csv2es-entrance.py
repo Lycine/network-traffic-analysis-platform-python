@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import json
+import os
 import sys
 import time
 from datetime import datetime
@@ -7,58 +9,64 @@ from datetime import datetime
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
-from csv2es_python.helper import convert_time
+from helper import check_pending_task
+from helper import convert_time
+from helper import mapping
+from helper import mv_pending2finished
+from helper import send_email
+from helper import speak
 
-from csv2es_python.helper import speak
+config_path = '/home/hongyu/PycharmProjects/bistu-internet-analysis/csv2es_python/config.json'
+try:
+    config_path = sys.argv[1]
+    print 'config_path: ' + config_path
+except:
+    print 'no decalre config_path'
+with open(config_path, 'r') as f:
+    val = f.read()
+    config = json.loads(val)
 
-from csv2es_python.helper import check_pending_task
+FINISHED_DIR = config['dir']['FINISHED_DIR']
+PENDING_DIR = config['dir']['PENDING_DIR']
 
-from csv2es_python.helper import send_email
+ES_INDEX = config['es']['ES_INDEX']
+ES_TYPE = config['es']['ES_TYPE']
+ES_USERNAME = config['es']['ES_USERNAME']
+ES_PASSWORD = config['es']['ES_PASSWORD']
+ES_HOSTNAME = config['es']['ES_HOSTNAME']
+ES_PORT = config['es']['ES_PORT']
 
-from csv2es_python.helper import mv_pending2finished
-
-from csv2es_python.helper import mapping
-
-from csv2es_python.helper import PENDING_DIR
-
-ES_INDEX = "bistu-internet-data-"
-ES_TYPE = "network-metadata"
-ES_USERNAME = "elastic"
-ES_PASSWORD = "changeme"
-ES_HOSTNAME = "localhost"
-ES_PORT = "9200"
-
-IS_MUTE = False
-
-AVERAGE_SPEED = 4100
+if "False" == config['entrance']['IS_MUTE']:
+    IS_MUTE = False
+else:
+    IS_MUTE = True
+AVERAGE_SPEED = int(config['entrance']['AVERAGE_SPEED'])
+actionsSize = int(config['entrance']['actionsSize'])
+errorRateThreshold = float(config['entrance']['errorRateThreshold'])
 
 IS_CONTINUE = True
-
 REMAIN_TASK = "null"
-
-actionsSize = 16000
-# actionsSize = 2000
-
 realErrorRate = 0.0
-
 taskFailure = False
-errorRate = 0.05
 
 
 def show_status():
+    d = es.indices.stats(index=temp_index)
+    doc_count = d['_all']['total']['docs']['count']
     end = time.clock()
     global AVERAGE_SPEED
-    AVERAGE_SPEED = round(count / (end - START_TIME), 2)
+    AVERAGE_SPEED = round(doc_count / (end - START_TIME), 2)
     print '\r\r\r',
     print(
-        'used time: %s' % convert_time((end - START_TIME)) +
-        ', aErrCont: ' + str(totalErrorCount) +
-        ', tErrCont: ' + str(taskErrorCount) +
-        ', ErrRate: ' + str(realErrorRate) +
-        ', speed: ' + str(round(count / (end - START_TIME), 2)) + 'r/s' +
-        ', cont/all: ' + str(count) + '/' + str(total) +
-        ', eta: ' + convert_time(round((total - count) / (count / (end - START_TIME)), 0)) +
-        ', fin: ' + str(round((count + 0.0) / total * 100, 2)) + '%' +
+        # Elapsed Time
+        'et: %s' % convert_time((end - START_TIME)) +
+        ', eta: ' + convert_time(round((total - doc_count) / (doc_count / (end - START_TIME)), 0)) +
+        # ', aErrCnt: ' + str(totalErrorCount) +
+        ', err: ' + str(taskErrorCount) +
+        ', errRate: ' + str(realErrorRate) + '%' +
+        ', spd: ' + str(round((doc_count / (end - START_TIME)) / 1000, 2)) + 'kr/s' +
+        # ', cont/all: ' + str(count) + '/' + str(total) +
+        ', finRate: ' + str(round((doc_count + 0.0) / total * 100, 2)) + '%' +
         ', now: ' + str(time.strftime('%H:%M:%S', time.localtime(time.time())))),
 
 
@@ -70,7 +78,7 @@ try:
     totalErrorCount = 0
     while IS_CONTINUE:
         if not taskFailure:
-            next_task = check_pending_task()
+            next_task = check_pending_task(pending_dir=PENDING_DIR)
         if next_task.strip(" ").strip("\n") == "":
             IS_CONTINUE = False
             break
@@ -96,6 +104,7 @@ try:
         es.indices.refresh(index=temp_index)
         START_TIME = time.clock()
         count = 0
+        doc_count = 0
         speak("new task begin", IS_MUTE)
         next_task_path = next_task_path.strip('\n')
         print "Running file:" + next_task_path
@@ -108,7 +117,7 @@ try:
         for line in source_file:
             count += 1
             realErrorRate = (0.0 + taskErrorCount) * actionsSize / total
-            if realErrorRate > errorRate:
+            if realErrorRate > errorRateThreshold:
                 taskFailure = True
                 print next_task + " failure"
                 content = next_task + " failure! <br>taskErrorCount: " + str(taskErrorCount)
@@ -168,7 +177,7 @@ try:
                 try:
                     for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
                                                           max_chunk_bytes=8 * 100 * 100 * 1024):
-                    # for ok, info in helpers.parallel_bulk(es, actions=actions):
+                        # for ok, info in helpers.parallel_bulk(es, actions=actions):
                         if not ok:
                             print('A document failed:', info)
                 except Exception, e:
@@ -181,7 +190,7 @@ try:
         if len(actions) > 0:
             for ok, info in helpers.parallel_bulk(es, actions=actions, thread_count=8, chunk_size=40000,
                                                   max_chunk_bytes=8 * 100 * 100 * 1024):
-            # for ok, info in helpers.parallel_bulk(es, actions=actions):
+                # for ok, info in helpers.parallel_bulk(es, actions=actions):
                 if not ok:
                     print('A document failed:', info)
             del actions[0:len(actions)]
@@ -192,7 +201,7 @@ try:
             speak("task complete", IS_MUTE)
             content = next_task + " complete! <br>Remain task: " + str(REMAIN_TASK)
             send_email(content)
-            mv_pending2finished(filename=next_task_path)
+            mv_pending2finished(finished_dir=FINISHED_DIR, filename=next_task_path)
             IS_CONTINUE = False
         print " "
         time.sleep(1)

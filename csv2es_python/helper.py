@@ -1,16 +1,25 @@
 # -*- coding: utf-8 -*-
+import json
 import math
 import smtplib
 import subprocess
-import sys
-import time
-from datetime import datetime
 from email.header import Header
 from email.mime.text import MIMEText
 from email.utils import parseaddr, formataddr
 
-FINISHED_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/finished/"
-PENDING_DIR = "/toshibaVolume/BISTU-NETWORK-DATA/pending/"
+# global config
+# config_path = 'config.json'
+#
+#
+# def select_config(config_path='config.json'):
+#     global config
+#     config = config_path
+
+
+# with open(config, 'r') as f:
+#     val = f.read()
+#     config = json.loads(val)
+
 
 MAIL_PASS = "kmryydqxlgetbibb"
 MAIL_SUBJECT = "csv2es status report"
@@ -30,6 +39,7 @@ def speak(message="nothing", IS_MUTE=True):
         (output, err) = p.communicate()
         return output
 
+
 def convert_time(seconds):
     day = 24 * 60 * 60
     hour = 60 * 60
@@ -46,6 +56,7 @@ def convert_time(seconds):
         minutess = divmod(seconds, minutes)
         return "%d:%d" % (int(minutess[0]), math.ceil(minutess[1]))
 
+
 def send_email(content=MAIL_CONTENT,
                subject=MAIL_SUBJECT,
                from_name=MAIL_FROM_NAME,
@@ -54,14 +65,11 @@ def send_email(content=MAIL_CONTENT,
                to_addr=MAIL_TO_ADDR,
                mail_password=MAIL_PASS,
                smtp_server=MAIL_SMTP):
-
-
     try:
         def _format_addr(s):
             name, addr = parseaddr(s)
             return formataddr(
                 (Header(name, 'utf-8').encode(), addr.encode('utf-8') if isinstance(addr, unicode) else addr))
-
 
         msg = MIMEText(content, 'html', 'utf-8')
         msg['From'] = _format_addr(from_name + u' <%s>' % from_addr)
@@ -75,7 +83,8 @@ def send_email(content=MAIL_CONTENT,
     except:
         pass
 
-def mv_pending2finished(finished_dir=FINISHED_DIR, filename="FILENAME"):
+
+def mv_pending2finished(finished_dir, filename="FILENAME"):
     command = "mv " + filename + " " + finished_dir
     p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     (output, err) = p.communicate()
@@ -84,7 +93,8 @@ def mv_pending2finished(finished_dir=FINISHED_DIR, filename="FILENAME"):
     else:
         print "Move task failure!"
 
-def check_pending_task(pending_dir=PENDING_DIR):
+
+def check_pending_task(pending_dir):
     command = "ls -l " + pending_dir + "|tail -n 1 |awk '{print $9}'"
     p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     (output, err) = p.communicate()
@@ -99,6 +109,7 @@ def check_pending_task(pending_dir=PENDING_DIR):
     if REMAIN_TASK == 0:
         print "No more pending task."
     return output
+
 
 mapping = '''
 {

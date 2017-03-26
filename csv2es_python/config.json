@@ -1,0 +1,30 @@
+{
+  "dir": {
+    "FINISHED_DIR": "/toshibaVolume/BISTU-NETWORK-DATA/finished/",
+    "PENDING_DIR": "/toshibaVolume/BISTU-NETWORK-DATA/pending/"
+  },
+  "mail": {
+    "MAIL_PASS": "kmryydqxlgetbibb",
+    "MAIL_SUBJECT": "csv2es status report",
+    "MAIL_CONTENT": "",
+    "MAIL_FROM_NAME": "Report Robot",
+    "MAIL_FROM_ADDR": "Administrator of elasticsearch",
+    "MAIL_TO_NAME": "513736920@qq.com",
+    "MAIL_TO_ADDR": "513736920@qq.com",
+    "MAIL_SMTP": "smtp.qq.com"
+  },
+  "es": {
+    "ES_INDEX": "bistu-internet-data-",
+    "ES_TYPE": "network-metadata",
+    "ES_USERNAME": "elastic",
+    "ES_PASSWORD": "changeme",
+    "ES_HOSTNAME": "localhost",
+    "ES_PORT": "9200"
+  },
+  "entrance": {
+    "IS_MUTE": "False",
+    "AVERAGE_SPEED": "2000",
+    "actionsSize": "16000",
+    "errorRateThreshold": "0.05"
+  }
+}
