@@ -89,9 +89,9 @@ def mv_pending2finished(finished_dir, filename="FILENAME"):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     (output, err) = p.communicate()
     if p.returncode == 0:
-        print "Move task success!"
+        print "\nMove task success!"
     else:
-        print "Move task failure!"
+        print "\nMove task failure!"
 
 
 def check_pending_task(pending_dir):

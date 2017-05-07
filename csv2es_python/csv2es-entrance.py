@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-import os
 import sys
 import time
 from datetime import datetime
@@ -63,7 +62,7 @@ def show_status():
         ', eta: ' + convert_time(round((total - doc_count) / (doc_count / (end - START_TIME)), 0)) +
         # ', aErrCnt: ' + str(totalErrorCount) +
         ', err: ' + str(taskErrorCount) +
-        ', errRate: ' + str(realErrorRate) + '%' +
+        ', errRate: ' + str(round(realErrorRate + 0.0, 2)) + '%' +
         ', spd: ' + str(round((doc_count / (end - START_TIME)) / 1000, 2)) + 'kr/s' +
         # ', cont/all: ' + str(count) + '/' + str(total) +
         ', finRate: ' + str(round((doc_count + 0.0) / total * 100, 2)) + '%' +

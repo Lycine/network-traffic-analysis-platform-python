@@ -1,7 +1,7 @@
 {
   "dir": {
-    "FINISHED_DIR": "/toshibaVolume/BISTU-NETWORK-DATA/pendingfinished/",
-    "PENDING_DIR": "/toshibaVolume/BISTU-NETWORK-DATA/finished/"
+    "FINISHED_DIR": "/toshibaVolume/BISTU-NETWORK-DATA/finished/",
+    "PENDING_DIR": "/toshibaVolume/BISTU-NETWORK-DATA/pending2/"
   },
   "mail": {
     "MAIL_PASS": "kmryydqxlgetbibb",
