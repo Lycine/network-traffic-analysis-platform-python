@@ -41,5 +41,4 @@ while :
             fi
         fi
         sleep 60
- 
         done

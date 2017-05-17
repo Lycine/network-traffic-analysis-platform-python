@@ -4,71 +4,129 @@ import os
 import sys
 import time
 from datetime import datetime
+import sys
 
+reload(sys)
+sys.setdefaultencoding('utf-8')
+time_start = time.time();
 
-def ip_into_int(ip):
-    # 先把 192.168.1.13 变成16进制的 c0.a8.01.0d ，再去了“.”后转成10进制的 3232235789 即可。
-    # (((((192 * 256) + 168) * 256) + 1) * 256) + 13
-    return reduce(lambda x, y: (x << 8) + y, map(int, ip.split('.')))
+config_path = '/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/blacklist-keyword.json'
+try:
+    config_path = sys.argv[1]
+    print 'config_path: ' + config_path
+except:
+    print 'no decalre config_path'
+with open(config_path, 'r') as f:
+    val = f.read()
+    config = json.loads(val)
 
+# origin_blacklist_keyword = config['blacklist-keyword']
+# print type(origin_blacklist_keyword)
+#
+# blacklist_keyword = []
+# for b in origin_blacklist_keyword:
+#     blacklist_keyword.append(b)
+# print origin_blacklist_keyword
+blacklist_keyword = config['blacklist-keyword']
 
-def is_internal_ip(ip):
-    ip = ip_into_int(ip)
-    net_a = ip_into_int('10.255.255.255') >> 24
-    net_b = ip_into_int('172.31.255.255') >> 20
-    net_c = ip_into_int('192.168.255.255') >> 16
-    return ip >> 24 == net_a or ip >> 20 == net_b or ip >> 16 == net_c
-
-
-def is_my_ip(ip):
-    edu_net_ip_list = ['222.249.130.141', '222.249.250.138', '222.249.130.198', '222.249.130.212', '222.249.250.31', '59.64.79.102', '59.64.79.139', '59.64.79.157', '222.249.251.150',
-                       '222.249.251.4', '222.249.250.45', '59.64.79.152', '222.249.251.85', '222.249.130.207', '59.64.79.158', '222.249.130.132', '222.249.251.84', '222.249.130.153',
-                       '222.249.251.132', '222.249.251.68']
-    s = set(edu_net_ip_list)
-    return ip in s
-
-
-source_file = open("/toshibaVolume/BISTU-NETWORK-DATA/2016-08-07-new/2016-08-07-23-new.txt", 'rb')
+print 'read source file...'
+# source_file = open("/Users/hongyu/Desktop/2016-08-05-16-new.txt", 'rb')
+source_file = open("/Users/hongyu/Desktop/2016-08-05-05-new.txt", 'rb')
 count = 0
 count2 = 1
 dstipList = []
-newf = file("first-cleansing.txt", "w+")
-old_timestamp = 0
-itemset = ''
+newf = file("ITEMSET-DATASET.csv", "w+")
+new2f = file("ITEMSET-DATASET.json", "w+")
+new3f = file("Scatter3D.json", "w+")
+new3f.writelines('[')
+hostnameAndTimeStampList = []
+hostnameList = []
 for line in source_file:
-    # if count < 1000000:
-
     try:
         newLine = line.split(',')
-
-        new_timestamp = str(newLine[4])
-        print 'new:' + str(new_timestamp)
-        print 'old:' + str(old_timestamp)
-        if (int(new_timestamp) - int(old_timestamp)) > 10:
-            print itemset
-            newf.writelines(itemset)
-            itemset = ''
-            old_timestamp = str(newLine[4])
-            #  if is_my_ip(str(newLine[0])):
         if str(newLine[7]) == 'HTTP' and str(newLine[6]) == 'HTTP':
             if str(newLine[12]) != '':
-                # dstipList.append(newLine[0])
-                # print count2, str(line[0]),  str(line[12])
-                # print line
-                # str(line[6]), str(line[7]), str(line[8]), str(line[9]),
-
-                # cleansed_line = str(newLine[12])+','+str(newLine[4]) + ','
-
-                itemset += str(newLine[12]) + ','
-#                print itemset
-                #newf.writelines(cleansed_line)
-                # count2 += 1
+                for i, black_keyword in enumerate(blacklist_keyword):
+                    if black_keyword not in str(newLine[12]):
+                        if i == len(blacklist_keyword) - 1:
+                            # 只要时间戳和hostname
+                            d = dict()
+                            d['hostname'] = str(newLine[12])
+                            d['timestamp'] = str(newLine[4])
+                            hostnameAndTimeStampList.append(d)
+                            hostnameList.append(str(newLine[12]))
+                    else:
+                        break
     except Exception, e:
         print e
     count += 1
-    # else:
-    #     break
+hostnameAndTimeStampList.sort(key=lambda k: (k.get('timestamp', 0)))
+old_timestamp = 0
+itemset = ''
+time_end = time.time()  # time.time()为1970.1.1到当前时间的毫秒数
+print time_end - time_start,
+print "s"
+mylist = []
+for i in hostnameAndTimeStampList:
+    new_timestamp = i['timestamp']
+    termHostnameCount = []
+
+    if (int(new_timestamp) - int(old_timestamp)) > 10:
+        myset = set(mylist)  # myset是另外一个列表，里面的内容是mylist里面的无重复 项
+        for item in myset:
+            hostnameCount = ()
+            hostnameCount = (str(item), mylist.count(item))
+            termHostnameCount.append(hostnameCount)
+        print 'len: ' + str(len(mylist))
+        mylist = []
+        termHostnameCount.sort(key=lambda k: k[1], reverse=True)
+        termHostnameCount = termHostnameCount[0:20]
+        time_end = time.time()  # time.time()为1970.1.1到当前时间的毫秒数
+        result = ''
+        for j in termHostnameCount:
+            result += str(j[0]) + ','
+        if len(termHostnameCount) != 0:
+            print "et: ",
+            print time_end - time_start,
+            print "s startTimeStamp: ",
+            print str(old_timestamp)
+            print "hostnameSize: ",
+            print str(len(termHostnameCount)),
+            print ', ',
+            print str(termHostnameCount)
+            d = {}
+            d['startTimeStamp'] = str(old_timestamp)
+            d['hostnameCount'] = termHostnameCount
+            new2f.writelines(json.dumps(d) + '\n')
+
+            for item in termHostnameCount:
+                li = []
+                li.append(old_timestamp)
+                li.append(item[0])
+                li.append(item[1])
+                new3f.writelines(json.dumps(li) + ',' + '\n')
+            newf.writelines(result[:-1] + '\n')  # 去除末尾逗号
+        old_timestamp = i['timestamp']
+    else:
+        mylist.append(str(i['hostname']).split(',')[0].split(':')[0])
 newf.close()
-dstipSet = set(dstipList)
-print dstipSet
-# 内网ip->HTTP->
+new3f.writelines(']')
+new3f.close()
+print 'len: ' + str(len(hostnameList))
+hostnameSet = set(hostnameList)  # myset是另外一个列表，里面的内容是mylist里面的无重复 项
+hostnameCountList = []
+for item in hostnameSet:
+    hostnameCount = ()
+    hostnameCount = (str(item), hostnameList.count(item))
+    hostnameCountList.append(hostnameCount)
+hostnameCountList.sort(key=lambda k: k[1], reverse=True)
+hostnameCountList = hostnameCountList[0:20]
+print "et: ",
+time_end = time.time()  # time.time()为1970.1.1到当前时间的毫秒数
+print time_end - time_start,
+print str(hostnameCountList)
+d = {}
+d['startTimeStamp'] = '0'
+d['hostnameCount'] = hostnameCountList
+new2f.writelines(json.dumps(d) + '\n')
+new2f.close()

@@ -1,0 +1,39 @@
+item: ('im-x.jd.com', 's.haiyunx.com') ,support: 0.154
+item: ('m.baidu.com', 'ap4.liuliangbao.cn') ,support: 0.157
+item: ('ap4.liuliangbao.cn', 's.haiyunx.com') ,support: 0.157
+item: ('ap4.liuliangbao.cn', 'changyan.sohu.com') ,support: 0.160
+item: ('cdn01.baidu-img.cn', 'ap4.liuliangbao.cn') ,support: 0.166
+item: ('ap4.liuliangbao.cn', 'cnzz.mmstat.com') ,support: 0.166
+item: ('t.adyun.com',) ,support: 0.169
+item: ('ck.kejet.net',) ,support: 0.171
+item: ('cdn01.baidu-img.cn', 'cnzz.mmstat.com') ,support: 0.171
+item: ('www.baidu.com',) ,support: 0.177
+item: ('cm.emarbox.com',) ,support: 0.177
+item: ('cdn01.baidu-img.cn', 'changyan.sohu.com') ,support: 0.180
+item: ('m.baidu.com', 'cnzz.mmstat.com') ,support: 0.180
+item: ('cdn01.baidu-img.cn', 's.haiyunx.com') ,support: 0.191
+item: ('cdn01.baidu-img.cn', 'cc.xtgreat.com') ,support: 0.191
+item: ('m.baidu.com', 's.haiyunx.com') ,support: 0.194
+item: ('m.baidu.com', 'changyan.sohu.com') ,support: 0.197
+item: ('c.ipjingling.com',) ,support: 0.202
+item: ('cnzz.mmstat.com', 's.haiyunx.com') ,support: 0.202
+item: ('114.141.152.37',) ,support: 0.208
+item: ('cc.xtgreat.com', 'cnzz.mmstat.com') ,support: 0.208
+item: ('changyan.sohu.com', 's.haiyunx.com') ,support: 0.208
+item: ('changyan.sohu.com', 'cc.xtgreat.com') ,support: 0.211
+item: ('m.baidu.com', 'cc.xtgreat.com') ,support: 0.213
+item: ('cc.xtgreat.com', 's.haiyunx.com') ,support: 0.216
+item: ('changyan.sohu.com', 'cnzz.mmstat.com') ,support: 0.222
+item: ('m.baidu.com', 'cdn01.baidu-img.cn') ,support: 0.261
+item: ('ap3.sap1000.com',) ,support: 0.278
+item: ('im-x.jd.com',) ,support: 0.289
+item: ('ap4.liuliangbao.cn',) ,support: 0.340
+item: ('cdn01.baidu-img.cn',) ,support: 0.416
+item: ('cnzz.mmstat.com',) ,support: 0.416
+item: ('s.haiyunx.com',) ,support: 0.421
+item: ('m.baidu.com',) ,support: 0.447
+item: ('changyan.sohu.com',) ,support: 0.449
+item: ('cc.xtgreat.com',) ,support: 0.455
+
+------------------------ RULES -------------------------
+Rule: ('cdn01.baidu-img.cn',) ==> ('m.baidu.com',) ,confidence: 0.628

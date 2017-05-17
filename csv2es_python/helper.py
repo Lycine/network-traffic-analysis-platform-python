@@ -6,21 +6,6 @@ import subprocess
 from email.header import Header
 from email.mime.text import MIMEText
 from email.utils import parseaddr, formataddr
-
-# global config
-# config_path = 'config.json'
-#
-#
-# def select_config(config_path='config.json'):
-#     global config
-#     config = config_path
-
-
-# with open(config, 'r') as f:
-#     val = f.read()
-#     config = json.loads(val)
-
-
 MAIL_PASS = "kmryydqxlgetbibb"
 MAIL_SUBJECT = "csv2es status report"
 MAIL_CONTENT = ""
