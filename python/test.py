@@ -1,4 +1,3 @@
-# coding:utf8
 import math
 import os
 import smtplib

@@ -1,61 +1,125 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import re
+import os
+import os.path
+import traceback
+import subprocess
 import json
 from flask import Flask
-from flask import request
-from flask import redirect
-from flask import jsonify
-from functools import wraps
 from flask import request, Response
+from flask_cors import *
+from some_service_based_on_flask.mail import sendemail
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    # 只接受post请求
     if request.method == 'POST':
-        a = request.get_data()
-        dict1 = json.loads(a)
-        return json.dumps(dict1["data"])
+        d = dict()
+        d['status'] = 'failed'
+        file_path = request.form['file_path']
+        emails = request.form['emails']
+        # 数据文件参数传过来为空
+        if not file_path:
+            d['content'] = 'Target file Path Empty!'
+            return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
+        # 邮件发送数组参数传过来为空
+        if not emails:
+            d['content'] = 'Emails Empty!'
+            return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
+        # print 'file_path: ',
+        # print file_path
+        # print 'emails: ',
+        # print emails
+        try:
+            emails_list = str(emails).split(';')
+            # print emails_list
+            for email in emails_list:
+                # 检查邮箱格式
+                if re.match(r'[0-9a-zA-Z_]{0,19}@[0-9a-zA-Z_]{0,19}.[0-9a-zA-Z_]{0,19}', email):
+                    pass
+                else:
+                    d['content'] = 'Email regex failure!'
+                    return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
+        except:
+            traceback.print_exc()
+            d['content'] = 'Email list error!'
+            return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
+        result = ''
+        try:
+            # "/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/apriori-result.txt"
+            # 准备工作都已经完成，开始计算
+            print 'data_cleansing start'
+            data_cleansing(file_path)
+            print 'data_cleansing finish'
+            print 'apriori start'
+            apriori()
+            print 'apriori finish'
+            apriori_result_directory = '/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/'
+            apriori_result_file_name = 'result.txt'
+            f = open(apriori_result_directory + apriori_result_file_name)  # 返回一个文件对象
+            line = f.readline()  # 调用文件的 readline()方法
+            while line:
+                # print line,  # 后面跟 ',' 将忽略换行符
+                line = f.readline()
+                result += line
+                result += '<br/>'
+            f.close()
+            sendemail(to=emails_list, subject_path=apriori_result_directory + apriori_result_file_name, file_name=str(file_path).split('/', -1)[-1])
+        except:
+            traceback.print_exc()
+            d['content'] = 'Read file failure!'
+            return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
+        if result:
+            d = dict()
+            d['status'] = 'success'
+            d['content'] = result
+            return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
+        else:
+            print 'result',
+            print result
+            d['content'] = 'Unknown error!'
+            return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
+    # 只接受post请求，驳回get请求
     else:
-        return '<h1>只接受post请求！</h1>'
+        d = dict()
+        d['status'] = 'failed'
+        d['content'] = 'Post requests only!'
+        return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
 
 
-@app.route('/user/<name>')
-def user(name):
-    return '<h1>hello, %s</h1>' % name
-
-# basic auth demo
-def check_auth(username, password):
-    """This function is called to check if a username /
-    password combination is valid.
-    """
-    return username == 'admin' and password == 'secret'
-
-
-def authenticate():
-    """Sends a 401 response that enables basic auth"""
-    return Response(
-        'Could not verify your access level for that URL.\n'
-        'You have to login with proper credentials', 401,
-        {'WWW-Authenticate': 'Basic realm="Login Required"'})
-
-
-def requires_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
-            return authenticate()
-        return f(*args, **kwargs)
-
-    return decorated
+# 以json格式返回可选择的网络流量数据
+@app.route('/selectable-files', methods=['GET'])
+def request_files():
+    rootdir = "/Users/hongyu/Desktop/demo-data"  # 指明被遍历的文件夹
+    result = []
+    for parent, dirnames, filenames in os.walk(rootdir):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
+        # for dirname in dirnames:  # 输出文件夹信息
+        # print "parent is:" + parent
+        # print "dirname is" + dirname
+        for filename in filenames:  # 输出文件信息
+            # print "parent is:" + parent
+            # print "**filename is:" + filename
+            # print "**the full name of the file is:" + os.path.join(parent, filename)  # 输出文件路径信息
+            if not filename.startswith('.'):
+                result.append([filename, os.path.join(parent, filename)])
+    print Response(json.dumps(result), mimetype='application/json;charset=UTF-8')
+    return Response(json.dumps(result), mimetype='application/json;charset=UTF-8')
 
 
-@app.route('/secret-page')
-@requires_auth
-def secret_page():
-    return 'this is a secret-page'
+# 同步调用数据清洗
+def data_cleansing(fname):
+    subprocess.call(["python", "/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/data-cleansing.py", fname])
+
+
+# 同步调用Apriori算法
+def apriori():
+    subprocess.call(["python", "/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/apriori.py", "-f",
+                     "/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/ITEMSET-DATASET.csv"])
 
 
 if __name__ == "__main__":

@@ -103,7 +103,9 @@ def runApriori(data_iter, minSupport, minConfidence):
 
 
 def printResults(items, rules):
-    newf = file("apriori-result.txt", "w+")
+    apriori_result_directory = '/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/'
+    apriori_result_file_name = 'result.txt'
+    newf = file(apriori_result_directory + apriori_result_file_name, "w+")
     """prints the generated itemsets sorted by support and the confidence rules sorted by confidence"""
     for item, support in sorted(items, key=lambda (item, support): support):
         # print "item: %s ,support: %.3f" % (str(item), support)
