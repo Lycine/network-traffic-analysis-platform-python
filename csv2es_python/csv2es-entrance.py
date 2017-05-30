@@ -9,13 +9,14 @@ from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 
 from helper import check_pending_task
+from helper import check_pending_task_simple
 from helper import convert_time
 from helper import mapping
 from helper import mv_pending2finished
 from helper import send_email
 from helper import speak
 
-config_path = '/home/hongyu/PycharmProjects/bistu-internet-analysis/csv2es_python/config.json'
+config_path = '/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/csv2es_python/config.json'
 try:
     config_path = sys.argv[1]
     print 'config_path: ' + config_path
@@ -44,7 +45,7 @@ actionsSize = int(config['entrance']['actionsSize'])
 errorRateThreshold = float(config['entrance']['errorRateThreshold'])
 
 IS_CONTINUE = True
-REMAIN_TASK = "null"
+REMAIN_TASK = "no more remain task"
 realErrorRate = 0.0
 taskFailure = False
 
@@ -198,17 +199,13 @@ try:
         source_file.close()
         if not taskFailure:
             speak("task complete", IS_MUTE)
+            REMAIN_TASK = check_pending_task_simple(pending_dir=PENDING_DIR)
             content = next_task + " complete! <br>Remain task: " + str(REMAIN_TASK)
             send_email(content)
             mv_pending2finished(finished_dir=FINISHED_DIR, filename=next_task_path)
             IS_CONTINUE = False
         print " "
         time.sleep(1)
-    del es
-    # speak("All task complete", IS_MUTE)
-    # print "All task complete"
-    # subject = "csv2es所有任务已完成"
-    # send_email(content="All task complete", subject=subject)
 
 except Exception, e:
     subject = "csv2es运行出现错误"

@@ -5,7 +5,11 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
-from email.utils import formataddr
+from email.utils import parseaddr,formataddr
+
+def _format_addr(s):
+    name, addr = parseaddr(s)
+    return formataddr((Header(name, 'utf-8').encode(), addr.encode('utf-8') if isinstance(addr, unicode) else addr))
 
 
 def sendemail(to='noreply@jozif.org', subject_path='default-subject-path-change-me', file_name='default-file-name-change-me'):
@@ -15,14 +19,17 @@ def sendemail(to='noreply@jozif.org', subject_path='default-subject-path-change-
     mail_pass = "kmryydqxlgetbibb"  # 口令
 
     sender = 'noreply@jozif.org'
-    # receivers = ['513736920@qq.com']  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
-    receivers = to  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
+    # receivers = ['noreply@jozif.org']  # 接收邮件formataddr((Header(name, 'utf-8').encode(), addr.encode('utf-8') if isinstance(addr, unicode) else addr))
+    receivers = to .decode('utf-8')  # 接收邮件
+    print 'send mail to: ',
+    print to
 
     # 创建一个带附件的实例
     message = MIMEMultipart()
-
-    # message['From'] = Header("突发事件响应中心", 'utf-8')
-    message['From'] = formataddr(["突发事件响应中心", mail_user])
+    # formataddr((Header("突发事件响应中心", 'utf-8').encode(), mail_user.encode('utf-8') if isinstance(mail_user, unicode) else mail_user))
+    nickname = "突发事件响应中心".decode('utf-8')
+    nickname = "突发事件响应中心"
+    message['From'] = formataddr([nickname, mail_user])
 
     subject = '突发事件响应报告'
     message['Subject'] = Header(subject, 'utf-8')
@@ -30,11 +37,11 @@ def sendemail(to='noreply@jozif.org', subject_path='default-subject-path-change-
     # 邮件正文内容
     message.attach(MIMEText('网络流量数据文件：' + str(file_name) + ' 的检测报告', 'plain', 'utf-8'))
 
-    # 构造附件1，传送当前目录下的 test.txt 文件
+    # 构造附件1，传送附件文件
     att1 = MIMEText(open(subject_path, 'rb').read(), 'base64', 'utf-8')
     att1["Content-Type"] = 'application/octet-stream'
-    # 这里的filename可以任意写，写什么名字，邮件中显示什么名字
-    att1["Content-Disposition"] = 'attachment; filename="test.txt"'
+    # 这里的filename是邮件中显示什么名字
+    att1["Content-Disposition"] = 'attachment; filename="report.txt"'
     message.attach(att1)
     try:
         smtpObj = smtplib.SMTP()

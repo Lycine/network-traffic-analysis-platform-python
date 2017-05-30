@@ -8,15 +8,17 @@ import subprocess
 import json
 from flask import Flask
 from flask import request, Response
-from flask_cors import *
 from some_service_based_on_flask.mail import sendemail
+from flask_cors import *
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-
 @app.route('/', methods=['GET', 'POST'])
-def index():
+def index():        # print 'file_path: ',
+        # print file_path
+        # print 'emails: ',
+        # print emails
     # 只接受post请求
     if request.method == 'POST':
         d = dict()
@@ -31,10 +33,10 @@ def index():
         if not emails:
             d['content'] = 'Emails Empty!'
             return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
-        # print 'file_path: ',
-        # print file_path
-        # print 'emails: ',
-        # print emails
+        print 'file_path: ',
+        print file_path
+        print 'emails: ',
+        print emails
         try:
             emails_list = str(emails).split(';')
             # print emails_list
@@ -51,7 +53,7 @@ def index():
             return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
         result = ''
         try:
-            # "/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/apriori-result.txt"
+            # "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/apriori-result.txt"
             # 准备工作都已经完成，开始计算
             print 'data_cleansing start'
             data_cleansing(file_path)
@@ -59,12 +61,12 @@ def index():
             print 'apriori start'
             apriori()
             print 'apriori finish'
-            apriori_result_directory = '/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/'
+            apriori_result_directory = '/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/'
             apriori_result_file_name = 'result.txt'
             f = open(apriori_result_directory + apriori_result_file_name)  # 返回一个文件对象
             line = f.readline()  # 调用文件的 readline()方法
             while line:
-                # print line,  # 后面跟 ',' 将忽略换行符
+                # print line, item: ('cc.xtgreat.com', 'cm.fastapi.net', 's.haiyunx.com', 's.x.cn.xtgreat.com', 'changyan.sohu.com') ,support: 0.154 # 后面跟 ',' 将忽略换行符
                 line = f.readline()
                 result += line
                 result += '<br/>'
@@ -95,31 +97,32 @@ def index():
 # 以json格式返回可选择的网络流量数据
 @app.route('/selectable-files', methods=['GET'])
 def request_files():
-    rootdir = "/Users/hongyu/Desktop/demo-data"  # 指明被遍历的文件夹
+    rootdir = "/toshibaVolume/BISTU-NETWORK-DATA/finished"  # 指明被遍历的文件夹
     result = []
     for parent, dirnames, filenames in os.walk(rootdir):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
         # for dirname in dirnames:  # 输出文件夹信息
-        # print "parent is:" + parent
-        # print "dirname is" + dirname
+            # print "parent is:" + parent
+            # print "dirname is" + dirname
         for filename in filenames:  # 输出文件信息
             # print "parent is:" + parent
             # print "**filename is:" + filename
             # print "**the full name of the file is:" + os.path.join(parent, filename)  # 输出文件路径信息
             if not filename.startswith('.'):
                 result.append([filename, os.path.join(parent, filename)])
-    print Response(json.dumps(result), mimetype='application/json;charset=UTF-8')
+    print 'json:',
+    print json.dumps(result)
     return Response(json.dumps(result), mimetype='application/json;charset=UTF-8')
 
 
 # 同步调用数据清洗
 def data_cleansing(fname):
-    subprocess.call(["python", "/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/data-cleansing.py", fname])
+    subprocess.call(["python", "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/data-cleansing.py", fname])
 
 
 # 同步调用Apriori算法
 def apriori():
-    subprocess.call(["python", "/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/apriori.py", "-f",
-                     "/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/ITEMSET-DATASET.csv"])
+    subprocess.call(["python", "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/apriori.py", "-f",
+                     "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/ITEMSET-DATASET.csv"])
 
 
 if __name__ == "__main__":

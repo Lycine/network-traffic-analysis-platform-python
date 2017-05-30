@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+  <title>网络流量分析平台 | 突发事件中心</title>
+  <!-- Bootstrap -->
+  <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+  <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"/>
+  <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+  <!--[if lt IE 9]>
+  <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="container">
+  <!--nav start-->
+  <div class="row">
+    <div class="col-xs-12">
+      <nav class="navbar navbar-default">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">网络流量分析平台 | 突发事件中心</a>
+          </div>
+          <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+              <li><a href="/pass/signInSuccess">主页 <span class="sr-only">(current)</span></a></li>
+              <li><a href="/analysis">统计分析中心 <span class="sr-only">(current)</span></a></li>
+              <li class="active"><a href="/emergency-response-center-home">突发事件中心 <span class="sr-only">(current)</span></a>
+              </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+              <li><a href="#" data-toggle="modal" data-target="#user-update-modal"><span
+                      class="glyphicon glyphicon-user" aria-hidden="true"></span> <span
+                      th:text="${session.user.nickName}"> 测试用户</span></a></li>
+              <li><a href="/pass/logout"><span class="glyphicon glyphicon-log-out"
+                                               aria-hidden="true"></span> 注销</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </div>
+  <!--nav end-->
+  <div class="row" style="margin-top: 3%">
+    <div class="col-md-8 col-md-offset-2">
+      <form>
+        <div class="form-group">
+          <label for="targetFile">可选文件</label>
+          <!--<input type="text" class="form-control" id="targetFile" name="targetFile"  value="/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/apriori-result.txt">-->
+          <select class="form-control" id="targetFile" name="targetFile" onmouseover="selectable()">
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="subscriptionUser">订阅用户</label>
+          <input type="text" class="form-control" id="subscriptionUser" name="subscriptionUser"
+                 value="513736920@qq.com"/>
+        </div>
+        <button id="submit-button" type="button" class="btn btn-default">提交</button>
+      </form>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 3%">
+    <div class="col-md-8 col-md-offset-2">
+      <div id="solution">
+        <!--alert alert-success alert-dismissible-->
+        <div id="solution-success" hidden="hidden" class="jumbotron " role="alert">
+          <h3>报告：</h3>
+          <br/>
+          <strong class="solution-title"></strong> <span class="solution-content"></span>
+        </div>
+        <!--<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>-->
+        <!--alert alert-danger alert-dismissible-->
+        <div id="solution-danger" hidden="hidden" class="jumbotron " role="alert">
+          <!--<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>-->
+          <strong class="solution-title"></strong> <span class="solution-content"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+<!--<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>-->
+<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"
+        integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+
+<script>
+  /*<![CDATA[*/
+  $(document).ready(function () {
+      $("#submit-button").click(function () {
+          var subscriptionUser = $("#subscriptionUser").val();
+          var targetFile = $("#targetFile").val();
+          $.post("http://localhost:5000/", {
+                  emails: subscriptionUser,
+                  file_path: targetFile
+              },
+              function (data) {
+                  if (data.status == 'success') {
+                      $("#solution-success").removeAttr("hidden");
+                      $("#solution-danger").attr("hidden", "hidden");
+                      $(".solution-content").html(data.content);
+                  } else {
+                      $("#solution-danger").removeAttr("hidden");
+                      $("#solution-success").attr("hidden", "hidden");
+                      $(".solution-content").text(data.content);
+                      console.log('failed');
+                  }
+              });  <!--有新消息，和用户名二选一。有新消息时显示有新消息，点击后进入消息中心。没有的话显示用户名，点击弹出模态框修改-->
+                            <!--<li><a href="#"><i class="fa fa-commenting" aria-hidden="true"></i> 有新消息</a></li>-->
+      });
+  });
+  function selectable() {
+      $.get("http://localhost:5000/selectable-files", {},
+          function (data) {
+              $("#targetFile").empty();
+              console.log(data);
+              $.each(data, function (index, value) {
+                  console.log(value);
+                  $('#targetFile').append('<option value="' + value[1] + '">' + value[0] + '</option>');
+                  console.log('<option value="' + value[1] + '">' + value[0] + '</option>');
+              });
+          });
+  }
+  /*]]>*/
+</script>
+</body>
+</html>

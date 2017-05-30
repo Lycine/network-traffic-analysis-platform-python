@@ -103,7 +103,7 @@ def runApriori(data_iter, minSupport, minConfidence):
 
 
 def printResults(items, rules):
-    apriori_result_directory = '/Users/hongyu/PycharmProjects/bistu-internet-analysis/data-mining/'
+    apriori_result_directory = '/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/'
     apriori_result_file_name = 'result.txt'
     newf = file(apriori_result_directory + apriori_result_file_name, "w+")
     """prints the generated itemsets sorted by support and the confidence rules sorted by confidence"""
@@ -164,5 +164,4 @@ if __name__ == "__main__":
     items, rules = runApriori(inFile, minSupport, minConfidence)
     printResults(items, rules)
 
-    # python apriori.py -f INTEGRATED-DATASET.csv -s 0.17 -c 0.68
     # python apriori.py -f ITEMSET-DATASET.csv -s 0.17 -c 0.68

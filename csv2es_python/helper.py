@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-import json
 import math
 import smtplib
 import subprocess
 from email.header import Header
 from email.mime.text import MIMEText
 from email.utils import parseaddr, formataddr
+
 MAIL_PASS = "kmryydqxlgetbibb"
 MAIL_SUBJECT = "csv2es status report"
 MAIL_CONTENT = ""
-MAIL_FROM_NAME = "Report Robot"
+MAIL_FROM_NAME = "csv2es auto report"
 MAIL_TO_NAME = "Administrator of elasticsearch"
-MAIL_FROM_ADDR = "513736920@qq.com"
-MAIL_TO_ADDR = "513736920@qq.com"
+MAIL_FROM_ADDR = "noreply@jozif.org"
+MAIL_TO_ADDR = "noreply@jozif.org"
 MAIL_SMTP = "smtp.qq.com"
+
 
 def speak(message="nothing", IS_MUTE=True):
     if IS_MUTE:
@@ -92,9 +93,19 @@ def check_pending_task(pending_dir):
     global REMAIN_TASK
     REMAIN_TASK = str(int(output2) - 1)
     if REMAIN_TASK == 0:
-        print "No more pending task."
+        print "No more remain task."
     return output
 
+def check_pending_task_simple(pending_dir):
+    command = "ls -l " + pending_dir + "|tail -n 1 |awk '{print $9}'"
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+    (output, err) = p.communicate()
+
+    command2 = " ls -l " + pending_dir + " |wc -l"
+    p = subprocess.Popen(command2, stdout=subprocess.PIPE, shell=True)
+    (output2, err2) = p.communicate()
+    output2 = output2.replace(' ', '')
+    return str(int(output2) - 2)
 
 mapping = '''
 {

@@ -3,6 +3,8 @@
 import os
 import os.path
 
+from some_service_based_on_flask.mail import sendemail
+
 rootdir = "/Users/hongyu/PycharmProjects/bistu-internet-analysis/some_service_based_on_flask/"  # 指明被遍历的文件夹
 result = []
 
@@ -16,3 +18,6 @@ for parent, dirnames, filenames in os.walk(rootdir):  # 三个参数：分别返
         print "**the full name of the file is:" + os.path.join(parent, filename)  # 输出文件路径信息
         result.append([i, filename, os.path.join(parent, filename)])
 print result
+
+sendemail(to='513736920@qq.com', subject_path='test.py',
+          file_name='subject')
