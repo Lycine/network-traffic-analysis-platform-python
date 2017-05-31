@@ -1,24 +1,27 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import re
+import json
 import os
 import os.path
-import traceback
+import re
 import subprocess
-import json
+import traceback
+
 from flask import Flask
 from flask import request, Response
-from some_service_based_on_flask.mail import sendemail
 from flask_cors import *
+
+from mail import sendemail
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
+
 @app.route('/', methods=['GET', 'POST'])
-def index():        # print 'file_path: ',
-        # print file_path
-        # print 'emails: ',
-        # print emails
+def index():  # print 'file_path: ',
+    # print file_path
+    # print 'emails: ',
+    # print emails
     # 只接受post请求
     if request.method == 'POST':
         d = dict()
@@ -71,7 +74,8 @@ def index():        # print 'file_path: ',
                 result += line
                 result += '<br/>'
             f.close()
-            sendemail(to=emails_list, subject_path=apriori_result_directory + apriori_result_file_name, file_name=str(file_path).split('/', -1)[-1])
+            sendemail(to=emails_list, subject_path=apriori_result_directory + apriori_result_file_name,
+                      file_name=str(file_path).split('/', -1)[-1])
         except:
             traceback.print_exc()
             d['content'] = 'Read file failure!'
@@ -101,8 +105,8 @@ def request_files():
     result = []
     for parent, dirnames, filenames in os.walk(rootdir):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
         # for dirname in dirnames:  # 输出文件夹信息
-            # print "parent is:" + parent
-            # print "dirname is" + dirname
+        # print "parent is:" + parent
+        # print "dirname is" + dirname
         for filename in filenames:  # 输出文件信息
             # print "parent is:" + parent
             # print "**filename is:" + filename
@@ -116,13 +120,15 @@ def request_files():
 
 # 同步调用数据清洗
 def data_cleansing(fname):
-    subprocess.call(["python", "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/data-cleansing.py", fname])
+    subprocess.call(
+        ["python", "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/data-cleansing.py", fname])
 
 
 # 同步调用Apriori算法
 def apriori():
-    subprocess.call(["python", "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/apriori.py", "-f",
-                     "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/ITEMSET-DATASET.csv"])
+    subprocess.call(
+        ["python", "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/apriori.py", "-f",
+         "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/ITEMSET-DATASET.csv"])
 
 
 if __name__ == "__main__":

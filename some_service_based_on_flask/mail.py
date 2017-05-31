@@ -20,7 +20,7 @@ def sendemail(to='noreply@jozif.org', subject_path='default-subject-path-change-
 
     sender = 'noreply@jozif.org'
     # receivers = ['noreply@jozif.org']  # 接收邮件formataddr((Header(name, 'utf-8').encode(), addr.encode('utf-8') if isinstance(addr, unicode) else addr))
-    receivers = to .decode('utf-8')  # 接收邮件
+    receivers = to  # 接收邮件
     print 'send mail to: ',
     print to
 
