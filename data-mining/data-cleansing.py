@@ -10,7 +10,7 @@ from optparse import OptionParser
 reload(sys)
 sys.setdefaultencoding('utf-8')
 time_start = time.time()
-config_path = '/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/blacklist-keyword.json'
+config_path = '/home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/data-mining/blacklist-keyword.json'
 try:
     print 'config_path: ' + config_path
 except:
@@ -28,7 +28,7 @@ source_file = open(sys.argv[1],'rb')
 count = 0
 count2 = 1
 dstipList = []
-newf = file("/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/ITEMSET-DATASET.csv", "w+")
+newf = file("/home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/data-mining/ITEMSET-DATASET.csv", "w+")
 
 hostnameAndTimeStampList = []
 hostnameList = []

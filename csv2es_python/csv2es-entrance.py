@@ -16,7 +16,7 @@ from helper import mv_pending2finished
 from helper import send_email
 from helper import speak
 
-config_path = '/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/csv2es_python/config.json'
+config_path = '/home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/csv2es_python/config.json'
 try:
     config_path = sys.argv[1]
     print 'config_path: ' + config_path

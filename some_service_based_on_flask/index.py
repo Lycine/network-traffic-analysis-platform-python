@@ -56,7 +56,7 @@ def index():  # print 'file_path: ',
             return Response(json.dumps(d), mimetype='application/json;charset=UTF-8')
         result = ''
         try:
-            # "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/apriori-result.txt"
+            # "/home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/data-mining/apriori-result.txt"
             # 准备工作都已经完成，开始计算
             print 'data_cleansing start'
             data_cleansing(file_path)
@@ -64,7 +64,7 @@ def index():  # print 'file_path: ',
             print 'apriori start'
             apriori()
             print 'apriori finish'
-            apriori_result_directory = '/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/'
+            apriori_result_directory = '/home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/data-mining/'
             apriori_result_file_name = 'result.txt'
             f = open(apriori_result_directory + apriori_result_file_name)  # 返回一个文件对象
             line = f.readline()  # 调用文件的 readline()方法
@@ -121,14 +121,14 @@ def request_files():
 # 同步调用数据清洗
 def data_cleansing(fname):
     subprocess.call(
-        ["python", "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/data-cleansing.py", fname])
+        ["python", "/home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/data-mining/data-cleansing.py", fname])
 
 
 # 同步调用Apriori算法
 def apriori():
     subprocess.call(
-        ["python", "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/apriori.py", "-f",
-         "/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/ITEMSET-DATASET.csv"])
+        ["python", "/home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/data-mining/apriori.py", "-f",
+         "/home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/data-mining/ITEMSET-DATASET.csv"])
 
 
 if __name__ == "__main__":

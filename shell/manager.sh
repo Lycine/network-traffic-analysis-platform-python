@@ -32,7 +32,7 @@ while :
                     break
                 else :
                     printf '\nrun csv2es_python\n'
-                    python /home/hongyu/PycharmProjects/bistu-internet-analysis-latest/csv2es_python/csv2es-entrance.py
+                    python /home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/csv2es_python/csv2es-entrance.py
                 fi
 
             else :

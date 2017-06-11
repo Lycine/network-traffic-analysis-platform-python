@@ -103,7 +103,7 @@ def runApriori(data_iter, minSupport, minConfidence):
 
 
 def printResults(items, rules):
-    apriori_result_directory = '/home/hongyu/PycharmProjects/bistu-internet-analysis-latest/data-mining/'
+    apriori_result_directory = '/home/hongyu/PycharmProjects/network-traffic-analysis-platform-python/data-mining/'
     apriori_result_file_name = 'result.txt'
     newf = file(apriori_result_directory + apriori_result_file_name, "w+")
     """prints the generated itemsets sorted by support and the confidence rules sorted by confidence"""
